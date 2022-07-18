@@ -9,224 +9,224 @@ local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 
-local emotes = {}
-local function addemote(name, id, price)
-	emotes[#emotes+1] = {
+local Emotes = {}
+local function AddEmote(name, id, price)
+	Emotes[#Emotes+1] = {
 		["name"] = name,
 		["id"] = id,
 		["icon"] = "rbxthumb://type=Asset&id=".. id .."&w=150&h=150",
 		["price"] = price,
 		["sort"] = {
-			["recentasc"] = #emotes+1
+			["recentfirst"] = #Emotes+1
 		}
 	}
 end
-local currentsort = "recentasc"
+local CurrentSort = "recentfirst"
 
-local cursor = ""
+local Cursor = ""
 while true do
-	local response = game:HttpGetAsync("https://catalog.roblox.com/v1/search/items/details?Category=12&Subcategory=39&SortType=3&SortAggregation=&limit=30&cursor=".. cursor .."&IncludeNotForSale=true")
-	local body = HttpService:JSONDecode(response)
-	for i,v in pairs(body.data) do
-		addemote(v.name or "", v.id or 0, v.price or 0)
+	local Response = game:HttpGetAsync("https://catalog.roblox.com/v1/search/items/details?Category=12&Subcategory=39&SortType=3&SortAggregation=&limit=30&cursor=".. Cursor .."&IncludeNotForSale=true")
+	local Body = HttpService:JSONDecode(Response)
+	for i,v in pairs(Body.data) do
+		AddEmote(v.name or "", v.id or 0, v.price or 0)
 	end
-	if body.nextPageCursor ~= nil then
-		cursor = body.nextPageCursor
+	if Body.nextPageCursor ~= nil then
+		Cursor = Body.nextPageCursor
 	else
 		break
 	end
 end
 
 --unreleased emotes
-addemote("Arm Wave", 5915773155, 0)
-addemote("Head Banging", 5915779725, 0)
-addemote("Face Calisthenics", 9830731012, 0)
+AddEmote("Arm Wave", 5915773155, 0)
+AddEmote("Head Banging", 5915779725, 0)
+AddEmote("Face Calisthenics", 9830731012, 0)
 
 --sorting options setup
-table.sort(emotes, function(a, b)
-	return a.sort.recentasc > b.sort.recentasc
+table.sort(Emotes, function(a, b)
+	return a.sort.recentfirst > b.sort.recentfirst
 end)
-for i,v in pairs(emotes) do
-	v.sort.recentdesc = i
+for i,v in pairs(Emotes) do
+	v.sort.recentlast = i
 end
 
-table.sort(emotes, function(a, b)
+table.sort(Emotes, function(a, b)
 	return a.name:lower() < b.name:lower()
 end)
-for i,v in pairs(emotes) do
-	v.sort.alphabeticasc = i
+for i,v in pairs(Emotes) do
+	v.sort.alphabeticfirst = i
 end
 
-table.sort(emotes, function(a, b)
+table.sort(Emotes, function(a, b)
 	return a.name:lower() > b.name:lower()
 end)
-for i,v in pairs(emotes) do
-	v.sort.alphabeticdesc = i
+for i,v in pairs(Emotes) do
+	v.sort.alphabeticlast = i
 end
 
-table.sort(emotes, function(a, b)
+table.sort(Emotes, function(a, b)
 	return a.price < b.price
 end)
-for i,v in pairs(emotes) do
-	v.sort.priceasc = i
+for i,v in pairs(Emotes) do
+	v.sort.lowestprice = i
 end
 
-table.sort(emotes, function(a, b)
+table.sort(Emotes, function(a, b)
 	return a.price > b.price
 end)
-for i,v in pairs(emotes) do
-	v.sort.pricedesc = i
+for i,v in pairs(Emotes) do
+	v.sort.highestprice = i
 end
 
-local screengui = Instance.new("ScreenGui")
-screengui.Name = "Emotes"
-screengui.DisplayOrder = 2
-screengui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-screengui.Enabled = false
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "Emotes"
+ScreenGui.DisplayOrder = 2
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.Enabled = false
 
-local backframe = Instance.new("Frame")
-backframe.Size = UDim2.new(0.9, 0, 0.5, 0)
-backframe.AnchorPoint = Vector2.new(0.5, 0.5)
-backframe.Position = UDim2.new(0.5, 0, 0.5, 0)
-backframe.SizeConstraint = Enum.SizeConstraint.RelativeYY
-backframe.BackgroundTransparency = 1
-backframe.BorderSizePixel = 0
-backframe.Parent = screengui
+local BackFrame = Instance.new("Frame")
+BackFrame.Size = UDim2.new(0.9, 0, 0.5, 0)
+BackFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+BackFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+BackFrame.SizeConstraint = Enum.SizeConstraint.RelativeYY
+BackFrame.BackgroundTransparency = 1
+BackFrame.BorderSizePixel = 0
+BackFrame.Parent = ScreenGui
 
-local emotename = Instance.new("TextLabel")
-emotename.Name = "EmoteName"
-emotename.TextScaled = true
-emotename.AnchorPoint = Vector2.new(0.5, 0.5)
-emotename.Position = UDim2.new(-0.1, 0, 0.5, 0)
-emotename.Size = UDim2.new(0.2, 0, 0.2, 0)
-emotename.SizeConstraint = Enum.SizeConstraint.RelativeYY
-emotename.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-emotename.TextColor3 = Color3.new(1, 1, 1)
-emotename.BorderSizePixel = 0
-emotename.Parent = backframe
+local EmoteName = Instance.new("TextLabel")
+EmoteName.Name = "EmoteName"
+EmoteName.TextScaled = true
+EmoteName.AnchorPoint = Vector2.new(0.5, 0.5)
+EmoteName.Position = UDim2.new(-0.1, 0, 0.5, 0)
+EmoteName.Size = UDim2.new(0.2, 0, 0.2, 0)
+EmoteName.SizeConstraint = Enum.SizeConstraint.RelativeYY
+EmoteName.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+EmoteName.TextColor3 = Color3.new(1, 1, 1)
+EmoteName.BorderSizePixel = 0
+EmoteName.Parent = BackFrame
 
-local corner = Instance.new("UICorner")
-corner.Parent = emotename
+local Corner = Instance.new("UICorner")
+Corner.Parent = EmoteName
 
-local frame = Instance.new("ScrollingFrame")
-frame.Size = UDim2.new(1, 0, 1, 0)
-frame.CanvasSize = UDim2.new(0, 0, 0, 0)
-frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-frame.ScrollingDirection = Enum.ScrollingDirection.Y
-frame.AnchorPoint = Vector2.new(0.5, 0.5)
-frame.Position = UDim2.new(0.5, 0, 0.5, 0)
-frame.BackgroundTransparency = 1
-frame.ScrollBarThickness = 5
-frame.BorderSizePixel = 0
-frame.MouseLeave:Connect(function()
-	emotename.Text = "Select an Emote"
+local Frame = Instance.new("ScrollingFrame")
+Frame.Size = UDim2.new(1, 0, 1, 0)
+Frame.CanvasSize = UDim2.new(0, 0, 0, 0)
+Frame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+Frame.ScrollingDirection = Enum.ScrollingDirection.Y
+Frame.AnchorPoint = Vector2.new(0.5, 0.5)
+Frame.Position = UDim2.new(0.5, 0, 0.5, 0)
+Frame.BackgroundTransparency = 1
+Frame.ScrollBarThickness = 5
+Frame.BorderSizePixel = 0
+Frame.MouseLeave:Connect(function()
+	EmoteName.Text = "Select an Emote"
 end)
-frame.Parent = backframe
+Frame.Parent = BackFrame
 
-local grid = Instance.new("UIGridLayout")
-grid.CellSize = UDim2.new(0.105, 0, 0, 0)
-grid.CellPadding = UDim2.new(0.006, 0, 0.006, 0)
-grid.SortOrder = Enum.SortOrder.LayoutOrder
-grid.Parent = frame
+local Grid = Instance.new("UIGridLayout")
+Grid.CellSize = UDim2.new(0.105, 0, 0, 0)
+Grid.CellPadding = UDim2.new(0.006, 0, 0.006, 0)
+Grid.SortOrder = Enum.SortOrder.LayoutOrder
+Grid.Parent = Frame
 
-local sortframe = Instance.new("Frame")
-sortframe.Visible = false
-sortframe.BorderSizePixel = 0
-sortframe.Position = UDim2.new(1, 5, -0.125, 0)
-sortframe.Size = UDim2.new(0.2, 0, 0, 0)
-sortframe.AutomaticSize = Enum.AutomaticSize.Y
-sortframe.BackgroundTransparency = 1
-corner:Clone().Parent = sortframe
-sortframe.Parent = backframe
+local SortFrame = Instance.new("Frame")
+SortFrame.Visible = false
+SortFrame.BorderSizePixel = 0
+SortFrame.Position = UDim2.new(1, 5, -0.125, 0)
+SortFrame.Size = UDim2.new(0.2, 0, 0, 0)
+SortFrame.AutomaticSize = Enum.AutomaticSize.Y
+SortFrame.BackgroundTransparency = 1
+Corner:Clone().Parent = SortFrame
+SortFrame.Parent = BackFrame
 
-local sortlist = Instance.new("UIListLayout")
-sortlist.Padding = UDim.new(0.02, 0)
-sortlist.HorizontalAlignment = Enum.HorizontalAlignment.Center
-sortlist.VerticalAlignment = Enum.VerticalAlignment.Top
-sortlist.SortOrder = Enum.SortOrder.LayoutOrder
-sortlist.Parent = sortframe
+local SortList = Instance.new("UIListLayout")
+SortList.Padding = UDim.new(0.02, 0)
+SortList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+SortList.VerticalAlignment = Enum.VerticalAlignment.Top
+SortList.SortOrder = Enum.SortOrder.LayoutOrder
+SortList.Parent = SortFrame
 
 local function createsort(order, text, sort)
-	local createdsort = Instance.new("TextButton")
-	createdsort.SizeConstraint = Enum.SizeConstraint.RelativeXX
-	createdsort.Size = UDim2.new(1, 0, 0.2, 0)
-	createdsort.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	createdsort.LayoutOrder = order
-	createdsort.TextColor3 = Color3.new(1, 1, 1)
-	createdsort.Text = text
-	createdsort.TextScaled = true
-	createdsort.BorderSizePixel = 0
-	corner:Clone().Parent = createdsort
-	createdsort.Parent = sortframe
-	createdsort.MouseButton1Click:Connect(function()
-		sortframe.Visible = false
-		currentsort = sort
-		for i,v in pairs(emotes) do
-			if frame:FindFirstChild(v.name) then
-				local emotebutton = frame[v.name]
-				emotebutton.LayoutOrder = v.sort[currentsort]
-				emotebutton.number.Text = v.sort[currentsort]
+	local CreatedSort = Instance.new("TextButton")
+	CreatedSort.SizeConstraint = Enum.SizeConstraint.RelativeXX
+	CreatedSort.Size = UDim2.new(1, 0, 0.2, 0)
+	CreatedSort.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	CreatedSort.LayoutOrder = order
+	CreatedSort.TextColor3 = Color3.new(1, 1, 1)
+	CreatedSort.Text = text
+	CreatedSort.TextScaled = true
+	CreatedSort.BorderSizePixel = 0
+	Corner:Clone().Parent = CreatedSort
+	CreatedSort.Parent = SortFrame
+	CreatedSort.MouseButton1Click:Connect(function()
+		SortFrame.Visible = false
+		CurrentSort = sort
+		for i,v in pairs(Emotes) do
+			if Frame:FindFirstChild(v.name) then
+				local EmoteButton = Frame[v.name]
+				EmoteButton.LayoutOrder = v.sort[CurrentSort]
+				EmoteButton.number.Text = v.sort[CurrentSort]
 			end
 		end
 	end)
-	return createdsort
+	return CreatedSort
 end
 
-createsort(1, "Recently Updated Asc.", "recentasc")
-createsort(2, "Recently Updated Desc.", "recentdesc")
-createsort(3, "Alphabetically Asc.", "alphabeticasc")
-createsort(4, "Alphabetically Desc.", "alphabeticdesc")
-createsort(5, "Price Asc.", "priceasc")
-createsort(6, "Price Desc.", "pricedesc")
+createsort(1, "Recently Updated First", "recentfirst")
+createsort(2, "Recently Updated Last", "recentlast")
+createsort(3, "Alphabetically First", "alphabeticfirst")
+createsort(4, "Alphabetically Last", "alphabeticlast")
+createsort(5, "Highest Price", "highestprice")
+createsort(6, "Lowest Price", "lowestprice")
 
-local sortbutton = Instance.new("TextButton")
-sortbutton.BorderSizePixel = 0
-sortbutton.AnchorPoint = Vector2.new(0.5, 0.5)
-sortbutton.Position = UDim2.new(0.925, -5, -0.075, 0)
-sortbutton.Size = UDim2.new(0.15, 0, 0.1, 0)
-sortbutton.TextScaled = true
-sortbutton.TextColor3 = Color3.new(1, 1, 1)
-sortbutton.BackgroundColor3 = Color3.new(0, 0, 0)
-sortbutton.BackgroundTransparency = 0.3
-sortbutton.Text = "Sort"
-sortbutton.MouseButton1Click:Connect(function()
-	sortframe.Visible = not sortframe.Visible
+local SortButton = Instance.new("TextButton")
+SortButton.BorderSizePixel = 0
+SortButton.AnchorPoint = Vector2.new(0.5, 0.5)
+SortButton.Position = UDim2.new(0.925, -5, -0.075, 0)
+SortButton.Size = UDim2.new(0.15, 0, 0.1, 0)
+SortButton.TextScaled = true
+SortButton.TextColor3 = Color3.new(1, 1, 1)
+SortButton.BackgroundColor3 = Color3.new(0, 0, 0)
+SortButton.BackgroundTransparency = 0.3
+SortButton.Text = "Sort"
+SortButton.MouseButton1Click:Connect(function()
+	SortFrame.Visible = not SortFrame.Visible
 end)
-corner:Clone().Parent = sortbutton
-sortbutton.Parent = backframe
+Corner:Clone().Parent = SortButton
+SortButton.Parent = BackFrame
 
-local closebutton = Instance.new("TextButton")
-closebutton.BorderSizePixel = 0
-closebutton.AnchorPoint = Vector2.new(0.5, 0.5)
-closebutton.Position = UDim2.new(0.075, 0, -0.075, 0)
-closebutton.Size = UDim2.new(0.15, 0, 0.1, 0)
-closebutton.TextScaled = true
-closebutton.TextColor3 = Color3.new(1, 1, 1)
-closebutton.BackgroundColor3 = Color3.new(0, 0, 0)
-closebutton.BackgroundTransparency = 0.3
-closebutton.Text = "Close"
-closebutton.MouseButton1Click:Connect(function()
-	screengui.Enabled = false
+local CloseButton = Instance.new("TextButton")
+CloseButton.BorderSizePixel = 0
+CloseButton.AnchorPoint = Vector2.new(0.5, 0.5)
+CloseButton.Position = UDim2.new(0.075, 0, -0.075, 0)
+CloseButton.Size = UDim2.new(0.15, 0, 0.1, 0)
+CloseButton.TextScaled = true
+CloseButton.TextColor3 = Color3.new(1, 1, 1)
+CloseButton.BackgroundColor3 = Color3.new(0, 0, 0)
+CloseButton.BackgroundTransparency = 0.3
+CloseButton.Text = "Close"
+CloseButton.MouseButton1Click:Connect(function()
+	ScreenGui.Enabled = false
 end)
-corner:Clone().Parent = closebutton
-closebutton.Parent = backframe
+Corner:Clone().Parent = CloseButton
+CloseButton.Parent = BackFrame
 
-local searchbar = Instance.new("TextBox")
-searchbar.BorderSizePixel = 0
-searchbar.AnchorPoint = Vector2.new(0.5, 0.5)
-searchbar.Position = UDim2.new(0.5, 0, -0.075, 0)
-searchbar.Size = UDim2.new(0.55, 0, 0.1, 0)
-searchbar.TextScaled = true
-searchbar.PlaceholderText = "Search"
-searchbar.TextColor3 = Color3.new(1, 1, 1)
-searchbar.BackgroundColor3 = Color3.new(0, 0, 0)
-searchbar.BackgroundTransparency = 0.3
-searchbar:GetPropertyChangedSignal("Text"):Connect(function()
-	local text = searchbar.Text:lower()
-	local buttons = frame:GetChildren()
+local SearchBar = Instance.new("TextBox")
+SearchBar.BorderSizePixel = 0
+SearchBar.AnchorPoint = Vector2.new(0.5, 0.5)
+SearchBar.Position = UDim2.new(0.5, 0, -0.075, 0)
+SearchBar.Size = UDim2.new(0.55, 0, 0.1, 0)
+SearchBar.TextScaled = true
+SearchBar.PlaceholderText = "Search"
+SearchBar.TextColor3 = Color3.new(1, 1, 1)
+SearchBar.BackgroundColor3 = Color3.new(0, 0, 0)
+SearchBar.BackgroundTransparency = 0.3
+SearchBar:GetPropertyChangedSignal("Text"):Connect(function()
+	local text = SearchBar.Text:lower()
+	local buttons = Frame:GetChildren()
 	if text ~= text:sub(1,50) then
-		searchbar.Text = searchbar.Text:sub(1,50)
-		text = searchbar.Text:lower()
+		SearchBar.Text = SearchBar.Text:sub(1,50)
+		text = SearchBar.Text:lower()
 	end
 	if text ~= ""  then
 		for i,button in pairs(buttons) do
@@ -247,12 +247,12 @@ searchbar:GetPropertyChangedSignal("Text"):Connect(function()
 		end
 	end
 end)
-corner:Clone().Parent = searchbar
-searchbar.Parent = backframe
+Corner:Clone().Parent = SearchBar
+SearchBar.Parent = BackFrame
 
 local function openemotes(name, state, object)
 	if state == Enum.UserInputState.Begin then
-		screengui.Enabled = not screengui.Enabled
+		ScreenGui.Enabled = not ScreenGui.Enabled
 	end
 end
 
@@ -264,33 +264,33 @@ ContextActionService:BindCoreActionAtPriority(
 	Enum.KeyCode.Comma
 )
 
-local inputconnect
-screengui:GetPropertyChangedSignal("Enabled"):Connect(function()
-	if screengui.Enabled == true then
-		emotename.Text = "Select an Emote"
-		searchbar.Text = ""
-		sortframe.Visible = false
+local InputConnect
+ScreenGui:GetPropertyChangedSignal("Enabled"):Connect(function()
+	if ScreenGui.Enabled == true then
+		EmoteName.Text = "Select an Emote"
+		SearchBar.Text = ""
+		SortFrame.Visible = false
 		GuiService:SetEmotesMenuOpen(false)
-		inputconnect = UserInputService.InputBegan:Connect(function(input, processed)
+		InputConnect = UserInputService.InputBegan:Connect(function(input, processed)
 			if not processed then
 				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					screengui.Enabled = false
+					ScreenGui.Enabled = false
 				end
 			end
 		end)
 	else
-		inputconnect:Disconnect()
+		InputConnect:Disconnect()
 	end
 end)
 
 GuiService.EmotesMenuOpenChanged:Connect(function(isopen)
 	if isopen then
-		screengui.Enabled = false
+		ScreenGui.Enabled = false
 	end
 end)
 
 GuiService.MenuOpened:Connect(function()
-	screengui.Enabled = false
+	ScreenGui.Enabled = false
 end)
 
 if not game:IsLoaded() then
@@ -299,33 +299,35 @@ end
 
 --thanks inf yield
 if (not is_sirhurt_closure) and (syn and syn.protect_gui) then
-	syn.protect_gui(screengui)
-	screengui.Parent = CoreGui
+	syn.protect_gui(ScreenGui)
+	ScreenGui.Parent = CoreGui
 elseif get_hidden_gui or gethui then
 	local hiddenUI = get_hidden_gui or gethui
-	screengui.Parent = hiddenUI()
+	ScreenGui.Parent = hiddenUI()
 else
-	screengui.Parent = CoreGui
+	ScreenGui.Parent = CoreGui
 end
 
-local localplayer = Players.LocalPlayer
+local LocalPlayer = Players.LocalPlayer
 
-local function playemote(name, id, icon)
-	screengui.Enabled = false
-	searchbar.Text = ""
+local function PlayEmote(name, id, icon)
+	ScreenGui.Enabled = false
+	SearchBar.Text = ""
 	if name == "random" then
-		local randomemote = emotes[math.random(1, #emotes)]
+		local randomemote = Emotes[math.random(1, #Emotes)]
 		name = randomemote.name
 		id = randomemote.id
 		icon = randomemote.icon
 	end
-	if localplayer.Character.Humanoid.RigType ~= Enum.HumanoidRigType.R6 then
+	if LocalPlayer.Character.Humanoid.RigType ~= Enum.HumanoidRigType.R6 then
 		local succ, err = pcall(function()
-			localplayer.Character.Humanoid:PlayEmote(name)
+			LocalPlayer.Character.Humanoid:PlayEmote(name)
 		end)
 		if not succ then
-			localplayer.Character.Humanoid.HumanoidDescription:AddEmote(name, id)
-			localplayer.Character.Humanoid:PlayEmote(name)
+			pcall(function()
+				LocalPlayer.Character.Humanoid.HumanoidDescription:AddEmote(name, id)
+				LocalPlayer.Character.Humanoid:PlayEmote(name)
+			end)
 		end
 	else
 		StarterGui:SetCore("SendNotification", {
@@ -337,18 +339,18 @@ local function playemote(name, id, icon)
 end
 
 local awesome = false
-local function charadded(character)
-	for i,v in pairs(frame:GetChildren()) do
+local function CharacterAdded(Character)
+	for i,v in pairs(Frame:GetChildren()) do
 		if not v:IsA("UIGridLayout") then
 			v:Destroy()
 		end
 	end
-	local humanoid = character:WaitForChild("Humanoid")
-	local description = humanoid:WaitForChild("HumanoidDescription")
+	local Humanoid = Character:WaitForChild("Humanoid")
+	local Description = Humanoid:WaitForChild("HumanoidDescription")
 	local random = Instance.new("TextButton")
-	local ratio = Instance.new("UIAspectRatioConstraint")
-	ratio.AspectType = Enum.AspectType.ScaleWithParentSize
-	ratio.Parent = random
+	local Ratio = Instance.new("UIAspectRatioConstraint")
+	Ratio.AspectType = Enum.AspectType.ScaleWithParentSize
+	Ratio.Parent = random
 	random.LayoutOrder = 0
 	random.TextColor3 = Color3.new(1, 1, 1)
 	random.BorderSizePixel = 0
@@ -357,60 +359,60 @@ local function charadded(character)
 	random.TextScaled = true
 	random.Text = "Random"
 	random:SetAttribute("name", "")
-	corner:Clone().Parent = random
+	Corner:Clone().Parent = random
 	random.MouseButton1Click:Connect(function()
-		playemote("random")
+		PlayEmote("random")
 	end)
 	random.MouseEnter:Connect(function()
-		emotename.Text = "Random"
+		EmoteName.Text = "Random"
 	end)
-	random.Parent = frame
-	for i,v in pairs(emotes) do
-		description:AddEmote(v.name, v.id)
-		local emotebutton = Instance.new("ImageButton")
-		emotebutton.LayoutOrder = v.sort[currentsort]
-		emotebutton.Name = v.name
-		emotebutton:SetAttribute("name", v.name)
-		corner:Clone().Parent = emotebutton
-		emotebutton.Image = v.icon
-		emotebutton.BackgroundTransparency = 0.5
-		emotebutton.BackgroundColor3 = Color3.new(0, 0, 0)
-		emotebutton.BorderSizePixel = 0
-		ratio:Clone().Parent = emotebutton
-		local emotenumber = Instance.new("TextLabel")
-		emotenumber.Name = "number"
-		emotenumber.TextScaled = true
-		emotenumber.BackgroundTransparency = 1
-		emotenumber.TextColor3 = Color3.new(1, 1, 1)
-		emotenumber.BorderSizePixel = 0
-		emotenumber.AnchorPoint = Vector2.new(0.5, 0.5)
-		emotenumber.Size = UDim2.new(0.2, 0, 0.2, 0)
-		emotenumber.Position = UDim2.new(0.9, 0, 0.9, 0)
-		emotenumber.Text = v.sort[currentsort]
-		emotenumber.Parent = emotebutton
-		emotebutton.Parent = frame
-		emotebutton.MouseButton1Click:Connect(function()
-			playemote(v.name, v.id, v.icon)
+	random.Parent = Frame
+	for i,v in pairs(Emotes) do
+		Description:AddEmote(v.name, v.id)
+		local EmoteButton = Instance.new("ImageButton")
+		EmoteButton.LayoutOrder = v.sort[CurrentSort]
+		EmoteButton.Name = v.name
+		EmoteButton:SetAttribute("name", v.name)
+		Corner:Clone().Parent = EmoteButton
+		EmoteButton.Image = v.icon
+		EmoteButton.BackgroundTransparency = 0.5
+		EmoteButton.BackgroundColor3 = Color3.new(0, 0, 0)
+		EmoteButton.BorderSizePixel = 0
+		Ratio:Clone().Parent = EmoteButton
+		local EmoteNumber = Instance.new("TextLabel")
+		EmoteNumber.Name = "number"
+		EmoteNumber.TextScaled = true
+		EmoteNumber.BackgroundTransparency = 1
+		EmoteNumber.TextColor3 = Color3.new(1, 1, 1)
+		EmoteNumber.BorderSizePixel = 0
+		EmoteNumber.AnchorPoint = Vector2.new(0.5, 0.5)
+		EmoteNumber.Size = UDim2.new(0.2, 0, 0.2, 0)
+		EmoteNumber.Position = UDim2.new(0.9, 0, 0.9, 0)
+		EmoteNumber.Text = v.sort[CurrentSort]
+		EmoteNumber.Parent = EmoteButton
+		EmoteButton.Parent = Frame
+		EmoteButton.MouseButton1Click:Connect(function()
+			PlayEmote(v.name, v.id, v.icon)
 		end)
-		emotebutton.MouseEnter:Connect(function()
-			emotename.Text = v.name
+		EmoteButton.MouseEnter:Connect(function()
+			EmoteName.Text = v.name
 		end)
 	end
 	for i=1,9 do
-		local emotebutton = Instance.new("Frame")
-		emotebutton.LayoutOrder = #emotes+1
-		emotebutton.Name = "filler"
-		emotebutton.BackgroundTransparency = 1
-		emotebutton.BorderSizePixel = 0
-		ratio:Clone().Parent = emotebutton
-		emotebutton.Visible = true
-		emotebutton.Parent = frame
-		emotebutton.MouseEnter:Connect(function()
-			emotename.Text = "Select an Emote"
+		local EmoteButton = Instance.new("Frame")
+		EmoteButton.LayoutOrder = #Emotes+1
+		EmoteButton.Name = "filler"
+		EmoteButton.BackgroundTransparency = 1
+		EmoteButton.BorderSizePixel = 0
+		Ratio:Clone().Parent = EmoteButton
+		EmoteButton.Visible = true
+		EmoteButton.Parent = Frame
+		EmoteButton.MouseEnter:Connect(function()
+			EmoteName.Text = "Select an Emote"
 		end)
 	end
 	if awesome == true then
-		description:SetEquippedEmotes({
+		Description:SetEquippedEmotes({
 			"Air Dance",
 			"Quiet Waves",
 			"Victory - 24kGoldn",
@@ -423,7 +425,7 @@ local function charadded(character)
 	end
 end
 
-if localplayer.Character ~= nil then
-	charadded(localplayer.Character)
+if LocalPlayer.Character ~= nil then
+	CharacterAdded(LocalPlayer.Character)
 end
-localplayer.CharacterAdded:Connect(charadded)
+LocalPlayer.CharacterAdded:Connect(CharacterAdded)

@@ -298,7 +298,8 @@ if not game:IsLoaded() then
 end
 
 --thanks inf yield
-if (not is_sirhurt_closure) and (syn and syn.protect_gui) then
+local SynV3 = syn and DrawingImmediate
+if (not is_sirhurt_closure) and (not SynV3) and (syn and syn.protect_gui) then
 	syn.protect_gui(ScreenGui)
 	ScreenGui.Parent = CoreGui
 elseif get_hidden_gui or gethui then

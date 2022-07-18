@@ -336,7 +336,7 @@ local function playemote(name, id, icon)
 	end
 end
 
-local awesome = true
+local awesome = false
 local function charadded(character)
 	for i,v in pairs(frame:GetChildren()) do
 		if not v:IsA("UIGridLayout") then

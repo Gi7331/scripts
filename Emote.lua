@@ -338,7 +338,6 @@ local function PlayEmote(name, id, icon)
 	end
 end
 
-local awesome = false
 local function CharacterAdded(Character)
 	for i,v in pairs(Frame:GetChildren()) do
 		if not v:IsA("UIGridLayout") then
@@ -410,18 +409,6 @@ local function CharacterAdded(Character)
 		EmoteButton.MouseEnter:Connect(function()
 			EmoteName.Text = "Select an Emote"
 		end)
-	end
-	if awesome == true then
-		Description:SetEquippedEmotes({
-			"Air Dance",
-			"Quiet Waves",
-			"Victory - 24kGoldn",
-			"Samba",
-			"Chicken Dance",
-			"Hype Dance",
-			"Floss Dance",
-			"BURBERRY LOLA ATTITUDE - NIMBUS"
-		})
 	end
 end
 

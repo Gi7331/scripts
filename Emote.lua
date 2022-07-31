@@ -311,14 +311,13 @@ end
 
 local LocalPlayer = Players.LocalPlayer
 
-local function PlayEmote(name, id, icon)
+local function PlayEmote(name, id)
 	ScreenGui.Enabled = false
 	SearchBar.Text = ""
 	if name == "random" then
 		local randomemote = Emotes[math.random(1, #Emotes)]
 		name = randomemote.name
 		id = randomemote.id
-		icon = randomemote.icon
 	end
 	if LocalPlayer.Character.Humanoid.RigType ~= Enum.HumanoidRigType.R6 then
 		local succ, err = pcall(function()
@@ -333,8 +332,7 @@ local function PlayEmote(name, id, icon)
 	else
 		StarterGui:SetCore("SendNotification", {
 			Title = "r6? lol",
-			Text = "you gotta be r15 dude",
-			Icon = icon
+			Text = "you gotta be r15 dude"
 		})
 	end
 end
@@ -392,7 +390,7 @@ local function CharacterAdded(Character)
 		EmoteNumber.Parent = EmoteButton
 		EmoteButton.Parent = Frame
 		EmoteButton.MouseButton1Click:Connect(function()
-			PlayEmote(v.name, v.id, v.icon)
+			PlayEmote(v.name, v.id)
 		end)
 		EmoteButton.MouseEnter:Connect(function()
 			EmoteName.Text = v.name

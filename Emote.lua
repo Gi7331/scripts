@@ -4,7 +4,6 @@
 local ContextActionService = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
 local GuiService = game:GetService("GuiService")
-local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
@@ -264,22 +263,12 @@ ContextActionService:BindCoreActionAtPriority(
 	Enum.KeyCode.Comma
 )
 
-local InputConnect
 ScreenGui:GetPropertyChangedSignal("Enabled"):Connect(function()
 	if ScreenGui.Enabled == true then
 		EmoteName.Text = "Select an Emote"
 		SearchBar.Text = ""
 		SortFrame.Visible = false
 		GuiService:SetEmotesMenuOpen(false)
-		InputConnect = UserInputService.InputBegan:Connect(function(input, processed)
-			if not processed then
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					ScreenGui.Enabled = false
-				end
-			end
-		end)
-	else
-		InputConnect:Disconnect()
 	end
 end)
 

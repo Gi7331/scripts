@@ -500,9 +500,6 @@ local function CharacterAdded(Character)
 		if Frame:FindFirstChild(Emote.name) then
 			local EmoteButton = Frame[Emote.name]
 			EmoteButton.LayoutOrder = i
-			print(Emote.name..": "..i)
-		else
-			print(Emote.name..": not found")
 		end
 	end
 	for i=1,9 do

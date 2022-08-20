@@ -41,6 +41,7 @@ AddEmote("Arm Wave", 5915773155, 0)
 AddEmote("Head Banging", 5915779725, 0)
 AddEmote("Face Calisthenics", 9830731012, 0)
 
+
 --sorting options setup
 table.sort(Emotes, function(a, b)
 	return a.sort.recentfirst > b.sort.recentfirst
@@ -76,6 +77,43 @@ end)
 for i,v in pairs(Emotes) do
 	v.sort.highestprice = i
 end
+
+local FavoriteOff = "rbxassetid://10651060677"
+local FavoriteOn = "rbxassetid://10651061109"
+local FavoritedEmotes = {}
+local FavoritedEmotesSorted = {}
+if isfile("FavoritedEmotes.txt") then
+	if not pcall(function()
+		FavoritedEmotes = HttpService:JSONDecode(readfile("FavoritedEmotes.txt"))
+	end) then
+		FavoritedEmotes = {}
+	end
+else
+	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+end
+for i,Emote in pairs(Emotes) do
+	if table.find(FavoritedEmotes, Emote.name) then
+		FavoritedEmotesSorted[#FavoritedEmotesSorted+1] = Emote
+	end
+end
+local function SortFavoriteEmotes()
+	table.sort(FavoritedEmotesSorted, function(a, b)
+		if CurrentSort == "recentfirst" then
+			return a.sort.recentfirst < b.sort.recentfirst
+		elseif CurrentSort == "recentlast" then
+			return a.sort.recentfirst > b.sort.recentfirst
+		elseif CurrentSort == "alphabeticfirst" then
+			return a.name:lower() < b.name:lower()
+		elseif CurrentSort == "alphabeticlast" then
+			return a.name:lower() > b.name:lower()
+		elseif CurrentSort == "lowestprice" then
+			return a.price < b.price
+		elseif CurrentSort == "highestprice" then
+			return a.price > b.price
+		end
+	end)
+end
+SortFavoriteEmotes()
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Emotes"
@@ -160,11 +198,20 @@ local function createsort(order, text, sort)
 	CreatedSort.MouseButton1Click:Connect(function()
 		SortFrame.Visible = false
 		CurrentSort = sort
-		for i,v in pairs(Emotes) do
-			if Frame:FindFirstChild(v.name) then
-				local EmoteButton = Frame[v.name]
-				EmoteButton.LayoutOrder = v.sort[CurrentSort]
-				EmoteButton.number.Text = v.sort[CurrentSort]
+		for i,Emote in pairs(Emotes) do
+			if Frame:FindFirstChild(Emote.name) then
+				local EmoteButton = Frame[Emote.name]
+				if not table.find(FavoritedEmotes, Emote.name) then
+					EmoteButton.LayoutOrder = Emote.sort[CurrentSort] + #FavoritedEmotesSorted
+				end
+				EmoteButton.number.Text = Emote.sort[CurrentSort]
+			end
+		end
+		SortFavoriteEmotes()
+		for i,Emote in pairs(FavoritedEmotesSorted) do
+			if Frame:FindFirstChild(Emote.name) then
+				local EmoteButton = Frame[Emote.name]
+				EmoteButton.LayoutOrder = i
 			end
 		end
 	end)
@@ -354,14 +401,16 @@ local function CharacterAdded(Character)
 		EmoteName.Text = "Random"
 	end)
 	random.Parent = Frame
-	for i,v in pairs(Emotes) do
-		Description:AddEmote(v.name, v.id)
+	for i,Emote in pairs(Emotes) do
+		Description:AddEmote(Emote.name, Emote.id)
 		local EmoteButton = Instance.new("ImageButton")
-		EmoteButton.LayoutOrder = v.sort[CurrentSort]
-		EmoteButton.Name = v.name
-		EmoteButton:SetAttribute("name", v.name)
+		if not table.find(FavoritedEmotes, Emote.name) then
+			EmoteButton.LayoutOrder = Emote.sort[CurrentSort] + #FavoritedEmotesSorted
+		end
+		EmoteButton.Name = Emote.name
+		EmoteButton:SetAttribute("name", Emote.name)
 		Corner:Clone().Parent = EmoteButton
-		EmoteButton.Image = v.icon
+		EmoteButton.Image = Emote.icon
 		EmoteButton.BackgroundTransparency = 0.5
 		EmoteButton.BackgroundColor3 = Color3.new(0, 0, 0)
 		EmoteButton.BorderSizePixel = 0
@@ -374,20 +423,91 @@ local function CharacterAdded(Character)
 		EmoteNumber.BorderSizePixel = 0
 		EmoteNumber.AnchorPoint = Vector2.new(0.5, 0.5)
 		EmoteNumber.Size = UDim2.new(0.2, 0, 0.2, 0)
-		EmoteNumber.Position = UDim2.new(0.9, 0, 0.9, 0)
-		EmoteNumber.Text = v.sort[CurrentSort]
+		EmoteNumber.Position = UDim2.new(0.1, 0, 0.9, 0)
+		EmoteNumber.Text = Emote.sort[CurrentSort]
+		EmoteNumber.TextXAlignment = Enum.TextXAlignment.Center
+		EmoteNumber.TextYAlignment = Enum.TextYAlignment.Center
 		EmoteNumber.Parent = EmoteButton
 		EmoteButton.Parent = Frame
 		EmoteButton.MouseButton1Click:Connect(function()
-			PlayEmote(v.name, v.id)
+			PlayEmote(Emote.name, Emote.id)
 		end)
 		EmoteButton.MouseEnter:Connect(function()
-			EmoteName.Text = v.name
+			EmoteName.Text = Emote.name
 		end)
+		local Favorite = Instance.new("ImageButton")
+		Favorite.Name = "favorite"
+		if table.find(FavoritedEmotes, Emote.name) then
+			Favorite.Image = FavoriteOn
+		else
+			Favorite.Image = FavoriteOff
+		end
+		Favorite.AnchorPoint = Vector2.new(0.5, 0.5)
+		Favorite.Size = UDim2.new(0.2, 0, 0.2, 0)
+		Favorite.Position = UDim2.new(0.9, 0, 0.9, 0)
+		Favorite.BorderSizePixel = 0
+		Favorite.BackgroundTransparency = 1
+		Favorite.Parent = EmoteButton
+		Favorite.MouseButton1Click:Connect(function()
+			local index = table.find(FavoritedEmotes, Emote.name)
+			if index then
+				table.remove(FavoritedEmotes, index)
+				table.remove(FavoritedEmotesSorted, table.find(FavoritedEmotesSorted, Emote))
+				Favorite.Image = FavoriteOff
+				writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+				for i,Emote in pairs(Emotes) do
+					if Frame:FindFirstChild(Emote.name) then
+						local EmoteButton = Frame[Emote.name]
+						if not table.find(FavoritedEmotes, Emote.name) then
+							EmoteButton.LayoutOrder = Emote.sort[CurrentSort] + #FavoritedEmotesSorted
+						end
+						EmoteButton.number.Text = Emote.sort[CurrentSort]
+					end
+				end
+				SortFavoriteEmotes()
+				for i,Emote in pairs(FavoritedEmotesSorted) do
+					if Frame:FindFirstChild(Emote.name) then
+						local EmoteButton = Frame[Emote.name]
+						EmoteButton.LayoutOrder = i
+					end
+				end
+			else
+				table.insert(FavoritedEmotes, Emote.name)
+				FavoritedEmotesSorted[#FavoritedEmotesSorted+1] = Emote
+				Favorite.Image = FavoriteOn
+				writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+				for i,Emote in pairs(Emotes) do
+					if Frame:FindFirstChild(Emote.name) then
+						local EmoteButton = Frame[Emote.name]
+						if not table.find(FavoritedEmotes, Emote.name) then
+							EmoteButton.LayoutOrder = Emote.sort[CurrentSort] + #FavoritedEmotesSorted
+						end
+						EmoteButton.number.Text = Emote.sort[CurrentSort]
+					end
+				end
+				SortFavoriteEmotes()
+				for i,Emote in pairs(FavoritedEmotesSorted) do
+					if Frame:FindFirstChild(Emote.name) then
+						local EmoteButton = Frame[Emote.name]
+						EmoteButton.LayoutOrder = i
+					end
+				end
+			end
+		end)
+	end
+	SortFavoriteEmotes()
+	for i,Emote in pairs(FavoritedEmotesSorted) do
+		if Frame:FindFirstChild(Emote.name) then
+			local EmoteButton = Frame[Emote.name]
+			EmoteButton.LayoutOrder = i
+			print(Emote.name..": "..i)
+		else
+			print(Emote.name..": not found")
+		end
 	end
 	for i=1,9 do
 		local EmoteButton = Instance.new("Frame")
-		EmoteButton.LayoutOrder = #Emotes+1
+		EmoteButton.LayoutOrder = 2147483647
 		EmoteButton.Name = "filler"
 		EmoteButton.BackgroundTransparency = 1
 		EmoteButton.BorderSizePixel = 0

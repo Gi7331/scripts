@@ -5,112 +5,53 @@ local ContextActionService = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local Emotes = {}
+local LoadedEmotes = {}
 local function AddEmote(name: string, id: IntValue, price: IntValue?)
-	if not (name and id) then
-		return
-	end
-	local i = #Emotes+1
-	Emotes[i] = {
-		["name"] = name,
-		["id"] = id,
-		["icon"] = "rbxthumb://type=Asset&id=".. id .."&w=150&h=150",
-		["price"] = price or 0,
-		["sort"] = {
-			["recentfirst"] = i
-		}
-	}
+	LoadedEmotes[id] = false
+	task.spawn(function()
+		if not (name and id) then
+			return
+		end
+		local success, date = pcall(function()
+			local info = MarketplaceService:GetProductInfo(id)
+			local updated = info.Updated
+			return DateTime.fromIsoDate(updated):ToUniversalTime()
+		end)
+		if not success then
+			task.wait(10)
+			AddEmote(name, id, price)
+			return
+		end
+		local unix = os.time({
+			year = date.Year,
+			month = date.Month,
+			day = date.Day,
+			hour = date.Hour,
+			min = date.Minute,
+			sec = date.Second
+		})
+		LoadedEmotes[id] = true
+		table.insert(Emotes, {
+			["name"] = name,
+			["id"] = id,
+			["icon"] = "rbxthumb://type=Asset&id=".. id .."&w=150&h=150",
+			["price"] = price or 0,
+			["lastupdated"] = unix,
+			["sort"] = {}
+		})
+	end)
 end
 local CurrentSort = "recentfirst"
-
-local Cursor = ""
-while true do
-	local Response = game:HttpGetAsync("https://catalog.roblox.com/v1/search/items/details?Category=12&Subcategory=39&SortType=3&SortAggregation=&limit=30&cursor=".. Cursor .."&IncludeNotForSale=true")
-	local Body = HttpService:JSONDecode(Response)
-	for i,v in pairs(Body.data) do
-		AddEmote(v.name, v.id, v.price)
-	end
-	if Body.nextPageCursor ~= nil then
-		Cursor = Body.nextPageCursor
-	else
-		break
-	end
-end
-
---unreleased emotes
-AddEmote("Arm Wave", 5915773155)
-AddEmote("Head Banging", 5915779725)
-AddEmote("Face Calisthenics", 9830731012)
-
---sorting options setup
-table.sort(Emotes, function(a, b)
-	return a.sort.recentfirst > b.sort.recentfirst
-end)
-for i,v in pairs(Emotes) do
-	v.sort.recentlast = i
-end
-
-table.sort(Emotes, function(a, b)
-	return a.name:lower() < b.name:lower()
-end)
-for i,v in pairs(Emotes) do
-	v.sort.alphabeticfirst = i
-end
-
-table.sort(Emotes, function(a, b)
-	return a.name:lower() > b.name:lower()
-end)
-for i,v in pairs(Emotes) do
-	v.sort.alphabeticlast = i
-end
-
-table.sort(Emotes, function(a, b)
-	return a.price < b.price
-end)
-for i,v in pairs(Emotes) do
-	v.sort.lowestprice = i
-end
-
-table.sort(Emotes, function(a, b)
-	return a.price > b.price
-end)
-for i,v in pairs(Emotes) do
-	v.sort.highestprice = i
-end
 
 local FavoriteOff = "rbxassetid://10651060677"
 local FavoriteOn = "rbxassetid://10651061109"
 local FavoritedEmotes = {}
-
-if isfile("FavoritedEmotes.txt") then
-	if not pcall(function()
-		FavoritedEmotes = HttpService:JSONDecode(readfile("FavoritedEmotes.txt"))
-	end) then
-		FavoritedEmotes = {}
-	end
-else
-	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
-end
-
-local UpdatedFavorites = {}
-for i,name in pairs(FavoritedEmotes) do
-	if typeof(name) == "string" then
-		for i,emote in pairs(Emotes) do
-			if emote.name == name then
-				table.insert(UpdatedFavorites, emote.id)
-				break
-			end
-		end
-	end
-end
-if #UpdatedFavorites ~= 0 then
-	FavoritedEmotes = UpdatedFavorites
-	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
-end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Emotes"
@@ -141,6 +82,17 @@ EmoteName.Parent = BackFrame
 
 local Corner = Instance.new("UICorner")
 Corner.Parent = EmoteName
+
+local Loading = Instance.new("TextLabel", BackFrame)
+Loading.AnchorPoint = Vector2.new(0.5, 0.5)
+Loading.Text = "Loading..."
+Loading.TextColor3 = Color3.new(1, 1, 1)
+Loading.BackgroundColor3 = Color3.new(0, 0, 0)
+Loading.TextScaled = true
+Loading.BackgroundTransparency = 0.5
+Loading.Size = UDim2.fromScale(0.2, 0.1)
+Loading.Position = UDim2.fromScale(0.5, 0.2)
+Corner:Clone().Parent = Loading
 
 local Frame = Instance.new("ScrollingFrame")
 Frame.Size = UDim2.new(1, 0, 1, 0)
@@ -396,6 +348,119 @@ local function WaitForChildOfClass(parent, class)
 		child = parent.ChildAdded:Wait()
 	end
 	return child
+end
+
+local Cursor = ""
+while true do
+	local function Request()
+		local success, Response = pcall(function()
+			return game:HttpGetAsync("https://catalog.roblox.com/v1/search/items/details?Category=12&Subcategory=39&SortType=1&SortAggregation=&limit=30&IncludeNotForSale=true&cursor=".. Cursor)
+		end)
+		if not success then
+			task.wait(10)
+			return Request()
+		end
+		return Response
+	end
+	local Response = Request()
+	local Body = HttpService:JSONDecode(Response)
+	for i,v in pairs(Body.data) do
+		AddEmote(v.name, v.id, v.price)
+	end
+	if Body.nextPageCursor ~= nil then
+		Cursor = Body.nextPageCursor
+	else
+		break
+	end
+end
+
+--unreleased emotes
+AddEmote("Arm Wave", 5915773155)
+AddEmote("Head Banging", 5915779725)
+AddEmote("Face Calisthenics", 9830731012)
+
+--wait for emotes to finish loading
+
+local function EmotesLoaded()
+	for i, loaded in pairs(LoadedEmotes) do
+		if not loaded then
+			return false
+		end
+	end
+	return true
+end
+while not EmotesLoaded() do
+	task.wait()
+end
+Loading:Destroy()
+
+--sorting options setup
+table.sort(Emotes, function(a, b)
+	return a.lastupdated > b.lastupdated
+end)
+for i,v in pairs(Emotes) do
+	v.sort.recentfirst = i
+end
+
+table.sort(Emotes, function(a, b)
+	return a.lastupdated < b.lastupdated
+end)
+for i,v in pairs(Emotes) do
+	v.sort.recentlast = i
+end
+
+table.sort(Emotes, function(a, b)
+	return a.name:lower() < b.name:lower()
+end)
+for i,v in pairs(Emotes) do
+	v.sort.alphabeticfirst = i
+end
+
+table.sort(Emotes, function(a, b)
+	return a.name:lower() > b.name:lower()
+end)
+for i,v in pairs(Emotes) do
+	v.sort.alphabeticlast = i
+end
+
+table.sort(Emotes, function(a, b)
+	return a.price < b.price
+end)
+for i,v in pairs(Emotes) do
+	v.sort.lowestprice = i
+end
+
+table.sort(Emotes, function(a, b)
+	return a.price > b.price
+end)
+for i,v in pairs(Emotes) do
+	v.sort.highestprice = i
+end
+
+if isfile("FavoritedEmotes.txt") then
+	if not pcall(function()
+		FavoritedEmotes = HttpService:JSONDecode(readfile("FavoritedEmotes.txt"))
+	end) then
+		FavoritedEmotes = {}
+	end
+else
+	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+end
+
+local UpdatedFavorites = {}
+for i,name in pairs(FavoritedEmotes) do
+	if typeof(name) == "string" then
+		for i,emote in pairs(Emotes) do
+			if emote.name == name then
+				table.insert(UpdatedFavorites, emote.id)
+				break
+			end
+		end
+	end
+end
+if #UpdatedFavorites ~= 0 then
+	FavoritedEmotes = UpdatedFavorites
+	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
 end
 
 local function CharacterAdded(Character)

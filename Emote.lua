@@ -459,15 +459,40 @@ for i,v in pairs(Emotes) do
 	v.sort.highestprice = i
 end
 
+
+local function IsFileFunc(...)
+	if IsStudio then
+		return
+	elseif isfile then
+		return isfile(...)
+	end
+end
+
+local function WriteFileFunc(...)
+	if IsStudio then
+		return
+	elseif writefile then
+		return writefile(...)
+	end
+end
+
+local function ReadFileFunc(...)
+	if IsStudio then
+		return
+	elseif readfile then
+		return readfile(...)
+	end
+end
+
 if not IsStudio then
-	if isfile("FavoritedEmotes.txt") then
+	if IsFileFunc("FavoritedEmotes.txt") then
 		if not pcall(function()
-			FavoritedEmotes = HttpService:JSONDecode(readfile("FavoritedEmotes.txt"))
+			FavoritedEmotes = HttpService:JSONDecode(ReadFileFunc("FavoritedEmotes.txt"))
 		end) then
 			FavoritedEmotes = {}
 		end
 	else
-		writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+		WriteFileFunc("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
 	end
 	local UpdatedFavorites = {}
 	for i,name in pairs(FavoritedEmotes) do
@@ -482,7 +507,7 @@ if not IsStudio then
 	end
 	if #UpdatedFavorites ~= 0 then
 		FavoritedEmotes = UpdatedFavorites
-		writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+		WriteFileFunc("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
 	end
 end
 
@@ -576,9 +601,7 @@ local function CharacterAdded(Character)
 				Favorite.Image = FavoriteOn
 				EmoteButton.LayoutOrder = Emote.sort[CurrentSort]
 			end
-			if not IsStudio then
-				writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
-			end
+			WriteFileFunc("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
 		end)
 	end
 	for i=1,9 do

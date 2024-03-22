@@ -1,53 +1,33 @@
 --keybind to open is comma
 --made by Gi#7331
 
+local IsStudio = false
+
 local ContextActionService = game:GetService("ContextActionService")
 local HttpService = game:GetService("HttpService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
-local MarketplaceService = game:GetService("MarketplaceService")
+local AvatarEditorService = game:GetService("AvatarEditorService")
 local Players = game:GetService("Players")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local Emotes = {}
-local LoadedEmotes = {}
 local function AddEmote(name: string, id: IntValue, price: IntValue?)
-	LoadedEmotes[id] = false
-	task.spawn(function()
-		if not (name and id) then
-			return
-		end
-		local success, date = pcall(function()
-			local info = MarketplaceService:GetProductInfo(id)
-			local updated = info.Updated
-			return DateTime.fromIsoDate(updated):ToUniversalTime()
-		end)
-		if not success then
-			task.wait(10)
-			AddEmote(name, id, price)
-			return
-		end
-		local unix = os.time({
-			year = date.Year,
-			month = date.Month,
-			day = date.Day,
-			hour = date.Hour,
-			min = date.Minute,
-			sec = date.Second
-		})
-		LoadedEmotes[id] = true
-		table.insert(Emotes, {
-			["name"] = name,
-			["id"] = id,
-			["icon"] = "rbxthumb://type=Asset&id=".. id .."&w=150&h=150",
-			["price"] = price or 0,
-			["lastupdated"] = unix,
-			["sort"] = {}
-		})
-	end)
+	if not (name and id) then
+		return
+	end
+
+	table.insert(Emotes, {
+		["name"] = name,
+		["id"] = id,
+		["icon"] = "rbxthumb://type=Asset&id=".. id .."&w=150&h=150",
+		["price"] = price or 0,
+		["index"] = #Emotes + 1,
+		["sort"] = {}
+	})
 end
-local CurrentSort = "recentfirst"
+local CurrentSort = "newestfirst"
 
 local FavoriteOff = "rbxassetid://10651060677"
 local FavoriteOn = "rbxassetid://10651061109"
@@ -57,6 +37,7 @@ local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "Emotes"
 ScreenGui.DisplayOrder = 2
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
 ScreenGui.Enabled = false
 
 local BackFrame = Instance.new("Frame")
@@ -164,8 +145,8 @@ local function createsort(order, text, sort)
 	return CreatedSort
 end
 
-createsort(1, "Recently Updated First", "recentfirst")
-createsort(2, "Recently Updated Last", "recentlast")
+createsort(1, "Newest First", "newestfirst")
+createsort(2, "Oldest First", "oldestfirst")
 createsort(3, "Alphabetically First", "alphabeticfirst")
 createsort(4, "Alphabetically Last", "alphabeticlast")
 createsort(5, "Highest Price", "highestprice")
@@ -248,13 +229,23 @@ local function openemotes(name, state, input)
 	end
 end
 
-ContextActionService:BindCoreActionAtPriority(
-	"Emote Menu",
-	openemotes,
-	true,
-	2001,
-	Enum.KeyCode.Comma
-)
+if IsStudio then
+	ContextActionService:BindActionAtPriority(
+		"Emote Menu",
+		openemotes,
+		true,
+		2001,
+		Enum.KeyCode.Comma
+	)
+else
+	ContextActionService:BindCoreActionAtPriority(
+		"Emote Menu",
+		openemotes,
+		true,
+		2001,
+		Enum.KeyCode.Comma
+	)
+end
 
 local inputconnect
 ScreenGui:GetPropertyChangedSignal("Enabled"):Connect(function()
@@ -275,11 +266,13 @@ ScreenGui:GetPropertyChangedSignal("Enabled"):Connect(function()
 	end
 end)
 
-GuiService.EmotesMenuOpenChanged:Connect(function(isopen)
-	if isopen then
-		ScreenGui.Enabled = false
-	end
-end)
+if not IsStudio then
+	GuiService.EmotesMenuOpenChanged:Connect(function(isopen)
+		if isopen then
+			ScreenGui.Enabled = false
+		end
+	end)
+end
 
 GuiService.MenuOpened:Connect(function()
 	ScreenGui.Enabled = false
@@ -289,20 +282,27 @@ if not game:IsLoaded() then
 	game.Loaded:Wait()
 end
 
---thanks inf yield
-local SynV3 = syn and DrawingImmediate
-if (not is_sirhurt_closure) and (not SynV3) and (syn and syn.protect_gui) then
-	syn.protect_gui(ScreenGui)
-	ScreenGui.Parent = CoreGui
-elseif get_hidden_gui or gethui then
-	local hiddenUI = get_hidden_gui or gethui
-	ScreenGui.Parent = hiddenUI()
+local LocalPlayer = Players.LocalPlayer
+
+if IsStudio then
+	ScreenGui.Parent = LocalPlayer.PlayerGui
 else
-	ScreenGui.Parent = CoreGui
+	--thanks inf yield
+	local SynV3 = syn and DrawingImmediate
+	if (not is_sirhurt_closure) and (not SynV3) and (syn and syn.protect_gui) then
+		syn.protect_gui(ScreenGui)
+		ScreenGui.Parent = CoreGui
+	elseif get_hidden_gui or gethui then
+		local hiddenUI = get_hidden_gui or gethui
+		ScreenGui.Parent = hiddenUI()
+	else
+		ScreenGui.Parent = CoreGui
+	end
 end
 
+
 local function SendNotification(title, text)
-	if syn and syn.toast_notification then
+	if (not IsStudio) and syn and syn.toast_notification then
 		syn.toast_notification({
 			Type = ToastType.Error,
 			Title = title,
@@ -316,7 +316,13 @@ local function SendNotification(title, text)
 	end
 end
 
-local LocalPlayer = Players.LocalPlayer
+local function HumanoidPlayEmote(humanoid, name, id)
+	if IsStudio then
+		return humanoid:PlayEmote(name)
+	else
+		return humanoid:PlayEmoteAndGetAnimTrackById(id)
+	end
+end
 
 local function PlayEmote(name: string, id: IntValue)
 	ScreenGui.Enabled = false
@@ -328,11 +334,11 @@ local function PlayEmote(name: string, id: IntValue)
 	end
 	if LocalPlayer.Character.Humanoid.RigType ~= Enum.HumanoidRigType.R6 then
 		local succ, err = pcall(function()
-			Humanoid:PlayEmoteAndGetAnimTrackById(id)
+			HumanoidPlayEmote(Humanoid, name, id)
 		end)
 		if not succ then
 			Description:AddEmote(name, id)
-			Humanoid:PlayEmoteAndGetAnimTrackById(id)
+			HumanoidPlayEmote(Humanoid, name, id)
 		end
 	else
 		SendNotification(
@@ -350,28 +356,56 @@ local function WaitForChildOfClass(parent, class)
 	return child
 end
 
-local Cursor = ""
+local params = CatalogSearchParams.new()
+params.AssetTypes = {Enum.AvatarAssetType.EmoteAnimation}
+params.SortType = Enum.CatalogSortType.RecentlyCreated
+params.SortAggregation = Enum.CatalogSortAggregation.AllTime
+params.IncludeOffSale = true
+params.CreatorName = "Roblox"
+params.Limit = 120
+
+local function getCatalogPage()
+	local success, catalogPage = pcall(function()
+		return AvatarEditorService:SearchCatalog(params)
+	end)
+	if not success then
+		task.wait(5)
+		return getCatalogPage()
+	end
+	return catalogPage
+end
+
+local catalogPage = getCatalogPage()
+
+local pages = {}
+
 while true do
-	local function Request()
-		local success, Response = pcall(function()
-			return game:HttpGetAsync("https://catalog.roblox.com/v1/search/items/details?Category=12&Subcategory=39&SortType=1&SortAggregation=&limit=30&IncludeNotForSale=true&cursor=".. Cursor)
-		end)
-		if not success then
-			task.wait(10)
-			return Request()
-		end
-		return Response
-	end
-	local Response = Request()
-	local Body = HttpService:JSONDecode(Response)
-	for i,v in pairs(Body.data) do
-		AddEmote(v.name, v.id, v.price)
-	end
-	if Body.nextPageCursor ~= nil then
-		Cursor = Body.nextPageCursor
-	else
+	local currentPage = catalogPage:GetCurrentPage()
+	table.insert(pages, currentPage)
+	if catalogPage.IsFinished then
 		break
 	end
+	local function AdvanceToNextPage()
+		local success = pcall(function()
+			catalogPage:AdvanceToNextPageAsync()
+		end)
+		if not success then
+			task.wait(5)
+			return AdvanceToNextPage()
+		end
+	end
+	AdvanceToNextPage()
+end
+
+local totalEmotes = {}
+for _, page in pairs(pages) do
+	for _, emote in pairs(page) do
+		table.insert(totalEmotes, emote)
+	end
+end
+
+for i, Emote in pairs(totalEmotes) do
+	AddEmote(Emote.Name, Emote.Id, Emote.Price)
 end
 
 --unreleased emotes
@@ -379,34 +413,22 @@ AddEmote("Arm Wave", 5915773155)
 AddEmote("Head Banging", 5915779725)
 AddEmote("Face Calisthenics", 9830731012)
 
---wait for emotes to finish loading
-
-local function EmotesLoaded()
-	for i, loaded in pairs(LoadedEmotes) do
-		if not loaded then
-			return false
-		end
-	end
-	return true
-end
-while not EmotesLoaded() do
-	task.wait()
-end
+--finished loading
 Loading:Destroy()
 
 --sorting options setup
 table.sort(Emotes, function(a, b)
-	return a.lastupdated > b.lastupdated
+	return a.index < b.index
 end)
 for i,v in pairs(Emotes) do
-	v.sort.recentfirst = i
+	v.sort.newestfirst = i
 end
 
 table.sort(Emotes, function(a, b)
-	return a.lastupdated < b.lastupdated
+	return a.index > b.index
 end)
 for i,v in pairs(Emotes) do
-	v.sort.recentlast = i
+	v.sort.oldestfirst = i
 end
 
 table.sort(Emotes, function(a, b)
@@ -437,31 +459,33 @@ for i,v in pairs(Emotes) do
 	v.sort.highestprice = i
 end
 
-if isfile("FavoritedEmotes.txt") then
-	if not pcall(function()
-		FavoritedEmotes = HttpService:JSONDecode(readfile("FavoritedEmotes.txt"))
-	end) then
-		FavoritedEmotes = {}
+if not IsStudio then
+	if isfile("FavoritedEmotes.txt") then
+		if not pcall(function()
+			FavoritedEmotes = HttpService:JSONDecode(readfile("FavoritedEmotes.txt"))
+		end) then
+			FavoritedEmotes = {}
+		end
+	else
+		writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
 	end
-else
-	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
-end
-
-local UpdatedFavorites = {}
-for i,name in pairs(FavoritedEmotes) do
-	if typeof(name) == "string" then
-		for i,emote in pairs(Emotes) do
-			if emote.name == name then
-				table.insert(UpdatedFavorites, emote.id)
-				break
+	local UpdatedFavorites = {}
+	for i,name in pairs(FavoritedEmotes) do
+		if typeof(name) == "string" then
+			for i,emote in pairs(Emotes) do
+				if emote.name == name then
+					table.insert(UpdatedFavorites, emote.id)
+					break
+				end
 			end
 		end
 	end
+	if #UpdatedFavorites ~= 0 then
+		FavoritedEmotes = UpdatedFavorites
+		writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+	end
 end
-if #UpdatedFavorites ~= 0 then
-	FavoritedEmotes = UpdatedFavorites
-	writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
-end
+
 
 local function CharacterAdded(Character)
 	for i,v in pairs(Frame:GetChildren()) do
@@ -552,7 +576,9 @@ local function CharacterAdded(Character)
 				Favorite.Image = FavoriteOn
 				EmoteButton.LayoutOrder = Emote.sort[CurrentSort]
 			end
-			writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+			if not IsStudio then
+				writefile("FavoritedEmotes.txt", HttpService:JSONEncode(FavoritedEmotes))
+			end
 		end)
 	end
 	for i=1,9 do
